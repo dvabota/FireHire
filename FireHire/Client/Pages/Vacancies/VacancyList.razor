@@ -1,0 +1,80 @@
+﻿@using FireHire.Shared.Shared;
+@using FireHire.Shared.Vacancies;
+@using System.ComponentModel.DataAnnotations;
+
+@inject NavigationManager _navigationManager
+
+<PageTitle>Vacancies</PageTitle>
+
+<MudContainer>
+    <Overlay isLoading=@isLoading />
+
+    <MudTable Items=@vacancies Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info">
+        <HeaderContent>
+            <MudTh>Title</MudTh>
+            <MudTh>Format</MudTh>
+            <MudTh>Salary</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Title">@context.Title</MudTd>
+            <MudTd DataLabel="Format">@context.Format</MudTd>
+            <MudTd DataLabel="Salary">@(context.Salary.LowBound + " " + context.Salary.CurrencyCode.GetAttribute<DisplayAttribute>().Name)</MudTd>
+            <MudTd>
+                <MudButtonGroup OverrideStyles="false">
+                    <MudButton OnClick="() => OnDelete(context.Id)" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Secondary">
+                        <MudIcon Icon=@Icons.Filled.Delete />
+                    </MudButton>
+                    <MudButton OnClick="@(() => OpenVacancyCard(context.Id))" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Tertiary">
+                        <MudIcon Icon=@Icons.Filled.Edit />
+                    </MudButton>
+                    <MudButton OnClick="@(() => OpenCVList(context.Id))" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary">
+                        <MudIcon Icon=@Icons.Filled.Folder />
+                    </MudButton>
+                </MudButtonGroup>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudContainer>
+
+@code {
+    private bool isLoading = false;
+
+    private List<Vacancy> vacancies;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            vacancies = new List<Vacancy>()
+            {
+                new Vacancy(1, "Developer C#", "", "", "", "", "remote", new Salary(150000, 220000, CurrencyCodes.RUB)),
+                new Vacancy(2, "UI Designer", "", "", "", "", "office", new Salary(2500, 3000, CurrencyCodes.EUR)),
+                new Vacancy(3, "Project manager", "", "", "", "", "free", new Salary(180000, 290000, CurrencyCodes.RUB)),
+            };
+
+            isLoading = false;
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
+    private void OnDelete(int id)
+    {
+        vacancies.RemoveAll(v => v.Id == id);
+    }
+
+    private void OpenVacancyCard(int id)
+    {
+        _navigationManager.NavigateTo($"/vacancyCard/{id}");
+    }
+
+    private void OpenCVList(int id)
+    {
+        
+    }
+}

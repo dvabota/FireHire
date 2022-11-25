@@ -1,0 +1,141 @@
+﻿@using FireHire.Shared.Constructor;
+@using FireHire.Shared.Vacancies;
+
+@inject NavigationManager _navigationManager
+
+@page "/vacancyCard/{id:int}"
+
+<PageTitle>Vacancy card</PageTitle>
+
+<MudContainer>
+    <Overlay isLoading=@isLoading />
+    
+    <EditForm Model=@vacancy OnValidSubmit="OnValidSubmit">
+        <DataAnnotationsValidator/>    
+        <MudGrid>
+            <MudItem Class="mt-5" xs="12" sm="6" md="6" lg="4">
+                <MudButtonGroup OverrideStyles=@false>
+                    <MudButton Color="Color.Default" Size="Size.Medium" Variant="Variant.Filled" Class="m-4" OnClick="@(() => ClickCVListButton())">CV list</MudButton>
+                    <MudButton Color="Color.Primary" Size="Size.Medium" Variant="Variant.Filled" Class="m-4" OnClick="@(() => ClickSaveButton())">Save</MudButton>
+                </MudButtonGroup>
+            </MudItem>
+
+            <MudItem xs="12" sm="12" md="12">
+                <MudPaper>
+                    @if (success)
+                    {
+                        <MudText Color="Color.Success">Успешно</MudText>
+                    }
+                    else
+                    {
+                        <MudText Color="@Color.Error">
+                            <ValidationSummary />
+                        </MudText>
+                    }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="vacancy.Title" Label="Title" Variant="Variant.Outlined"></MudTextField>
+                    <MudTextField @bind-Value="vacancy.Description" Label="Description" Variant="Variant.Outlined" Lines="3"></MudTextField>
+                    <MudTextField @bind-Value="vacancy.Requirements" Label="Requirements" Variant="Variant.Outlined" Lines="7"></MudTextField>
+                    <MudTextField @bind-Value="vacancy.Skills" Label="Skills" Variant="Variant.Outlined"></MudTextField>
+                    <MudTextField @bind-Value="vacancy.Benefits" Label="Benefits" Variant="Variant.Outlined"></MudTextField>
+                <MudTextField @bind-Value="vacancy.Format" Label="Format" Variant="Variant.Outlined"></MudTextField>
+                <MudText>Salary</MudText>
+                <MudSelect @bind-Value="vacancy.Salary.CurrencyCode" Label="Currency" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem T="CurrencyCodes" Value="CurrencyCodes.RUB" />
+                    <MudSelectItem T="CurrencyCodes" Value="CurrencyCodes.EUR" />
+                    <MudSelectItem T="CurrencyCodes" Value="CurrencyCodes.USD" />
+                </MudSelect>
+                <MudNumericField @bind-Value="vacancy.Salary.LowBound" Label="LowBound" Variant="Variant.Outlined" Min="0" />
+                <MudNumericField @bind-Value="vacancy.Salary.HighBound" Label="HighBound" Variant="Variant.Outlined" Min="vacancy.Salary.LowBound" Max="10" />
+            </MudItem>
+            
+            <MudItem xs="12" sm="6">
+                <MudGrid>
+                    @foreach(var u in units)
+                    {
+                        <MudItem xs=@u.XS sm=@u.SM md=@u.MD lg=@u.LG>
+                            <MudBadge Origin="@Origin.TopRight" Overlap=@true Color="Color.Primary" Icon="@Icons.Filled.Clear" OnClick="() => ClickRemoveUnitButton(u.Id)">
+                                <MudPaper Class="d-flex align-center justify-center mud-width-full pa-3" Style="cursor:pointer">@u.Title</MudPaper>
+                            </MudBadge>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudItem>
+
+        </MudGrid>
+    </EditForm>
+
+</MudContainer>
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    private bool isLoading = false;
+    private bool success;
+
+    private Vacancy vacancy;
+    private List<ConstructorUnit> units;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            vacancy = new Vacancy(1,
+                "Middle/Senior Fullstack Web3 developer",
+                "Friends, we are looking for Middle/Senior Fullstack web3 developer on our projects.",
+                    @"
+- 3+ years (ideally 5+ years) of experience as a Full-Stack software engineer
+- Strong knowledge of JavaScript and its execution environments (both server-side and client-side)
+- Experience with front-end JavaScript frameworks and libraries (Vue.js is a big plus)",
+    "JavaScript, Vue.js is a big plus, Apache Kafka, RabbitMQ, PostgreSQL, MongoDB",
+    "Any country location",
+    "Full remote work, outstaff, 5/2",
+    new Salary(5000, 7900, CurrencyCodes.USD)
+        );
+
+            units = new List<ConstructorUnit>()
+            {
+                new ConstructorUnit(1, "Developer"),
+                new ConstructorUnit(2, "Fullstack"),
+                new ConstructorUnit(3, "Intern"),
+                new ConstructorUnit(4, "Middle"),
+                new ConstructorUnit(5, "Senior"),
+            };
+
+            isLoading = false;
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
+
+    private void OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+    }
+
+
+    private async Task ClickRemoveUnitButton(int id)
+    {
+        units.RemoveAll(u => u.Id == id);
+    }
+
+
+    private async Task ClickSaveButton()
+    {
+        
+    }
+
+    private async Task ClickCVListButton()
+    {
+        _navigationManager.NavigateTo($"/cvlist/{id}");        
+    }
+}
