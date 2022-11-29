@@ -4,7 +4,7 @@ namespace FireHire.Shared.Constructor
 {
     public class ConstructorUnit
     {
-        public ConstructorUnit(int id, string title, int xS = 6, int sM = 4, int mD = 3, int lG = 2)
+        public ConstructorUnit(int id, string title, int xS = 6, int sM = 6, int mD = 4, int lG = 4)
         {
             Id = id;
             Title = title;

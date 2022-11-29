@@ -1,7 +1,10 @@
-﻿@using FireHire.Shared.Constructor;
+﻿@using FireHire.Client.Services;
+@using FireHire.Shared.Constructor;
 @using FireHire.Shared.Vacancies;
 
 @inject NavigationManager _navigationManager
+@inject ClipboardService _clipboardService
+@inject ISnackbar _snackbar
 
 @page "/vacancyCard/{id:int}"
 
@@ -56,9 +59,9 @@
                     @foreach(var u in units)
                     {
                         <MudItem xs=@u.XS sm=@u.SM md=@u.MD lg=@u.LG>
-                            <MudBadge Origin="@Origin.TopRight" Overlap=@true Color="Color.Primary" Icon="@Icons.Filled.Clear" OnClick="() => ClickRemoveUnitButton(u.Id)">
-                                <MudPaper Class="d-flex align-center justify-center mud-width-full pa-3" Style="cursor:pointer">@u.Title</MudPaper>
-                            </MudBadge>
+                                <MudBadge Origin="@Origin.TopRight" Overlap=@true Color="Color.Default" Icon="@Icons.Filled.Clear" OnClick="() => ClickRemoveUnitButton(u.Id)" Style="cursor:pointer">
+                                <MudPaper Class="d-flex align-center justify-center mud-width-full pa-3" onclick=@(() => CopyUnitToClipboard(u.Id)) >@u.Title</MudPaper>
+                                </MudBadge>
                         </MudItem>
                     }
                 </MudGrid>
@@ -99,11 +102,14 @@
 
             units = new List<ConstructorUnit>()
             {
-                new ConstructorUnit(1, "Developer"),
-                new ConstructorUnit(2, "Fullstack"),
-                new ConstructorUnit(3, "Intern"),
-                new ConstructorUnit(4, "Middle"),
-                new ConstructorUnit(5, "Senior"),
+                new ConstructorUnit(1, "Friends, we are looking for professional and fan of their craft on our project."),
+                new ConstructorUnit(2, "We are working with clients in various industries, including Security, Telecommunications, Healthcare, Internet, FinTech, Real Estate, Consumer Electronics, and many more."),
+                new ConstructorUnit(3, "There may be other projects with great technologies, so feel free to send your CV. You are welcome!"),
+                new ConstructorUnit(4, "- Company benefits - competitive salary, internal bonuses related to the company business results, other location-specific benefits"),
+                new ConstructorUnit(5, "- Personal and professional development paid external training, professional literature, and e-courses"),
+                new ConstructorUnit(6, "- Global team - working with a motivated and talented international team"),
+                new ConstructorUnit(7, "- Relocation package for the whole family"),
+                new ConstructorUnit(8, "📩Let me know if this is something you could be interested in and I’d be happy to set up a call to tell you more about opportunity."),
             };
 
             isLoading = false;
@@ -131,11 +137,19 @@
 
     private async Task ClickSaveButton()
     {
-        
+
     }
 
     private async Task ClickCVListButton()
     {
         _navigationManager.NavigateTo($"/cvlist/{id}");        
+    }
+
+    private async Task CopyUnitToClipboard(int id)
+    {
+        await _clipboardService.WriteTextAsync(units.FirstOrDefault(u => u.Id == id).Title);
+        _snackbar.Clear();
+        _snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        _snackbar.Add("Copied", Severity.Normal, config => { config.VisibleStateDuration = 100; config.ShowTransitionDuration = 400; config.HideTransitionDuration = 400; config.HideIcon = true; });
     }
 }
