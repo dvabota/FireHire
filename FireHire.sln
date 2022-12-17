@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33103.184
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FireHire.Server", "FireHire\Server\FireHire.Server.csproj", "{89BFD6DD-A2E6-422C-9A2B-4B9D6331D13B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FireHire.Server", "FireHire\Server\FireHire.Server.csproj", "{89BFD6DD-A2E6-422C-9A2B-4B9D6331D13B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FireHire.Client", "FireHire\Client\FireHire.Client.csproj", "{00FD44EA-1EC6-4119-B203-918D95326FE6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FireHire.Client", "FireHire\Client\FireHire.Client.csproj", "{00FD44EA-1EC6-4119-B203-918D95326FE6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FireHire.Shared", "FireHire\Shared\FireHire.Shared.csproj", "{C3B3DF53-978F-446D-A48F-334CD2AF60DC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FireHire.Shared", "FireHire\Shared\FireHire.Shared.csproj", "{C3B3DF53-978F-446D-A48F-334CD2AF60DC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

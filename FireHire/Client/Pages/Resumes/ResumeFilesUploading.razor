@@ -1,0 +1,121 @@
+﻿@using System.Net.Http.Headers;
+
+
+@inject ISnackbar Snackbar
+@inject HttpClient _httpClient
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer>
+
+            <Overlay isLoading=@isLoading />   
+            <MudStack Style="width: 100%">
+                <MudFileUpload T="IReadOnlyList<IBrowserFile>" OnFilesChanged="OnInputFileChanged" Hidden="false" Class="flex-1" InputClass="absolute mud-width-full mud-height-full overflow-hidden z-20" InputStyle="opacity:0"
+                               @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass">
+                    <ButtonTemplate>
+                        <MudPaper Height="300px" Outlined="true" Class="@DragClass">
+                            <MudText Typo="Typo.h6">Drag and drop files here or click</MudText>
+                            @foreach (var file in fileNames)
+                            {
+                                <MudChip Color="Color.Dark" Text="@file" />
+                            }
+                        </MudPaper>
+                    </ButtonTemplate>
+                </MudFileUpload>
+                <MudToolBar DisableGutters="true" Class="gap-4">
+                    <MudButton OnClick="Clear" Disabled="@(!fileNames.Any())" Color="Color.Error" Variant="Variant.Filled">Clear</MudButton>
+                </MudToolBar>
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled=@isLoading OnClick="OnCancel">Отмена</MudButton>
+        <MudButton Disabled=@isLoading Color="Color.Error" OnClick="OnSave">Сохранить</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int vacancyId { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private bool isLoading = false;
+    private bool isLoadingPhoto = false;
+    private long maxFileSize = 1024 * 1024 * 15;
+
+    private static string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full z-10";
+    private string DragClass = DefaultDragClass;
+    private List<string> fileNames = new List<string>();
+
+    private async Task OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        ClearDragClass();
+        var files = e.GetMultipleFiles();
+        foreach (var file in files)
+        {
+            fileNames.Add(file.Name);
+            await UpdateProductPhoto(file.OpenReadStream(maxFileSize), new MediaTypeHeaderValue(file.ContentType), file.Name);
+        }
+    }
+
+    private async Task UpdateProductPhoto(Stream fileStream, MediaTypeHeaderValue contentType, string fileName)
+    {
+            var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = contentType;
+
+            content.Add(content: fileContent,
+                name: "\"files\"",
+                fileName: fileName);
+
+        using (var response = await _httpClient.PostAsync("/uploadCVFile", content))
+            {
+                string responseData = await response.Content.ReadAsStringAsync();
+                string reasonPhrase = response.ReasonPhrase.ToString();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                    }
+                    catch (Exception ex)
+                    {
+                    }
+                }
+                else
+                {
+                    Snackbar.Add("Error: " + responseData + "\n" + reasonPhrase, Severity.Error);
+                }
+            }
+    }
+
+    private async Task Clear()
+    {
+        fileNames.Clear();
+        ClearDragClass();
+        await Task.Delay(100);
+    }
+
+    private async void OnSave()
+    {
+        isLoading = true;
+
+        MudDialog.Close(DialogResult.Ok(true));
+
+        isLoading = false;
+    }
+
+    private void OnCancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void SetDragClass()
+    {
+        DragClass = $"{DefaultDragClass} mud-border-primary";
+    }
+
+    private void ClearDragClass()
+    {
+        DragClass = DefaultDragClass;
+    }
+}

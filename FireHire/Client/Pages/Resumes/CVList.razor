@@ -1,60 +1,142 @@
-﻿@inject NavigationManager _navigationManager
+﻿
 
 @page "/cvlist/{id:int}"
 
+@using FireHire.Shared.Resumes;
 @using Microsoft.AspNetCore.Components
 @using System.ComponentModel.DataAnnotations
 @using MudBlazor.Utilities;
+@using Newtonsoft.Json.Linq;
+
+@inject ISnackbar Snackbar
+@inject NavigationManager _navigationManager
+@inject IDialogService DialogService
+@inject HttpClient _httpClient
 
 <MudContainer>
     <Overlay isLoading=@isLoading />
 
-	<MudItem Class="mt-5" xs="12" sm="6" md="6" lg="4">
+    <MudItem Class="mt-5" xs="12" sm="6" md="6" lg="4">
 		<MudButtonGroup OverrideStyles=@false>
 			<MudButton Color="Color.Default" Size="Size.Medium" Variant="Variant.Filled" Class="m-4" OnClick="@(() => ClickBackButton())">Back</MudButton>
+			<MudButton Color="Color.Primary" Size="Size.Medium" Variant="Variant.Filled" Class="m-4" OnClick="@(() => ClickUploadCvs())">Upload CVs</MudButton>
 		</MudButtonGroup>
 	</MudItem>
 
-	<MudDropContainer T="KanbanTaskItem" @ref="_dropContainer" Items="@_tasks" ItemsSelector="@((item,column) => item.Status == column)" ItemDropped="TaskUpdated" Class="d-flex flex-row">
-		<ChildContent>
-			@foreach (var item in _sections)
-			{
-				<MudPaper Elevation="0" Width="224px" MinHeight="400px" Class="pa-4 ma-4 d-flex flex-column rounded-lg" Style=@("background:" + item.SectionColor + ";")>
-					<MudToolBar DisableGutters="true">
-						<MudText Typo="Typo.subtitle1"><b>@item.Name</b></MudText>
-						<MudSpacer />
-					</MudToolBar>
-					<MudDropZone T="KanbanTaskItem" Identifier="@item.Name" Class="mud-height-full" />
-				</MudPaper>
-			}
-		</ChildContent>
-		<ItemRenderer>
-			<MudPaper Elevation="25" Class="pa-4 rounded-lg my-3">@context.Name</MudPaper>
-		</ItemRenderer>
-	</MudDropContainer>
+    <MudItem Class="mt-5">
+        @if (!isLoading)
+        {
+            <MudDropContainer T="Resume" @ref="_dropContainer" Items="@resumes" ItemsSelector="@((item, column) => item.State == column)" ItemDropped="TaskUpdated" Class="d-flex flex-row">
+		        <ChildContent>
+			        @foreach (var item in _sections)
+			        {
+				        <MudPaper Elevation="0" Width="224px" MinHeight="400px" Class="pa-4 ma-4 d-flex flex-column rounded-lg" Style=@("background:" + item.SectionColor + ";")>
+					        <MudToolBar DisableGutters="true">
+						        <MudText Typo="Typo.subtitle1"><b>@item.Name</b></MudText>
+						        <MudSpacer />
+					        </MudToolBar>
+					        <MudDropZone T="Resume" Identifier="@item.Name" Class="mud-height-full" />
+				        </MudPaper>
+			        }
+		        </ChildContent>
+		        <ItemRenderer>
+			        <MudPaper Elevation="25" Class="pa-4 rounded-lg my-3">@context.Title</MudPaper>
+		        </ItemRenderer>
+            </MudDropContainer>
+        }
+        else
+        {
+            <MudGrid>
+                <MudSkeleton Class="pa-4 ma-4 d-flex flex-column rounded-lg" SkeletonType="SkeletonType.Rectangle" Width="100%" Height="400px" />
+            </MudGrid>
+        }
+
+    </MudItem>
 
 </MudContainer>
 
 @code {
-	[Parameter] public int id { get; set; }
+    [Parameter] public int id { get; set; }
 
-	private bool isLoading = false;
-	private MudDropContainer<KanbanTaskItem> _dropContainer;
+    private bool isLoading = false;
+    private MudDropContainer<Resume> _dropContainer;
+    private List<Resume> resumes = new List<Resume>();
 
-	private bool _addSectionOpen;
-	/* handling board events */
-	private void TaskUpdated(MudItemDropInfo<KanbanTaskItem> info)
-	{
-		info.Item.Status = info.DropzoneIdentifier;
-	}
+    private bool _addSectionOpen;
 
-	private async Task ClickBackButton()
-	{
-		_navigationManager.NavigateTo($"/vacancyCard/{id}");
-	}
 
-	/* Setup for board  */
-	private List<KanBanSections> _sections = new()
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+
+        await GetResumes();
+
+        isLoading = false;
+    }
+
+    private async Task GetResumes()
+    {
+
+        using (var response = await _httpClient.GetAsync("/getResumes"))
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            string reasonPhrase = response.ReasonPhrase.ToString();
+
+            if (response.IsSuccessStatusCode)
+            {
+                try
+                {
+                    var jsObj = JArray.Parse(responseData);
+                    resumes = JsonConvert.DeserializeObject<List<Resume>>(jsObj.ToString());
+                    _dropContainer.Refresh();
+                }
+                catch (Exception ex)
+                {
+                }
+            }
+            else
+            {
+                Snackbar.Add("Error: " + responseData + "\n" + reasonPhrase, Severity.Error);
+            }
+        }
+    }
+
+
+    /* handling board events */
+    private void TaskUpdated(MudItemDropInfo<Resume> info)
+    {
+        info.Item.State = info.DropzoneIdentifier;
+    }
+
+    private async Task ClickBackButton()
+    {
+        _navigationManager.NavigateTo($"/vacancyCard/{id}");
+    }
+
+    private async Task ClickUploadCvs()
+    {
+        isLoading = true;
+
+        string title = "Uploading CV files";
+
+        var parameters = new DialogParameters
+			{
+				["vacancyId"] = id
+			};
+
+        var dialog = DialogService.Show<ResumeFilesUploading>(title, parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            await GetResumes();
+        }
+
+        isLoading = false;
+    }
+
+    /* Setup for board  */
+    private List<KanBanSections> _sections = new()
 		{
 			new KanBanSections("Not checked", false, String.Empty, "#FFEBEE"),
 			new KanBanSections("Checked", false, String.Empty, "#F9FBE7"),
@@ -63,47 +145,19 @@
 			new KanBanSections("Trash", false, String.Empty, "#ECEFF1"),
 		};
 
-	public class KanBanSections
-	{
-		public string Name { get; init; }
-		public bool NewTaskOpen { get; set; }
-		public string NewTaskName { get; set; }
-		public MudColor SectionColor { get; set; }
+    public class KanBanSections
+    {
+        public string Name { get; init; }
+        public bool NewTaskOpen { get; set; }
+        public string NewTaskName { get; set; }
+        public MudColor SectionColor { get; set; }
 
-		public KanBanSections(string name, bool newTaskOpen, string newTaskName, MudColor sectionColor)
-		{
-			Name = name;
-			NewTaskOpen = newTaskOpen;
-			NewTaskName = newTaskName;
-			SectionColor = sectionColor;
-		}
-	}
-	public class KanbanTaskItem
-	{
-		public string Name { get; init; }
-		public string Status { get; set; }
-
-		public KanbanTaskItem(string name, string status)
-		{
-			Name = name;
-			Status = status;
-		}
-	}
-
-	private List<KanbanTaskItem> _tasks = new()
-		{
-			new KanbanTaskItem("CV1 sometitle", "Not checked"),
-			new KanbanTaskItem("CV1 sometitle", "Not checked"),
-			new KanbanTaskItem("CV1 sometitle", "Not checked"),
-		};
-
-	KanBanNewForm newSectionModel = new KanBanNewForm();
-
-	public class KanBanNewForm
-	{
-		[Required]
-		[StringLength(10, ErrorMessage = "Name length can't be more than 10.")]
-		public string Name { get; set; }
-	}
-
+        public KanBanSections(string name, bool newTaskOpen, string newTaskName, MudColor sectionColor)
+        {
+            Name = name;
+            NewTaskOpen = newTaskOpen;
+            NewTaskName = newTaskName;
+            SectionColor = sectionColor;
+        }
+    }
 }

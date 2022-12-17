@@ -1,3 +1,6 @@
+
+global using Newtonsoft.Json;
+
 using FireHire.Client;
 using FireHire.Client.Services;
 using Microsoft.AspNetCore.Components.Web;
